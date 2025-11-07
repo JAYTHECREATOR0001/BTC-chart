@@ -19,34 +19,37 @@
     font-family: "Inter", sans-serif;
   }
 
+  /* Container */
   .btc-bar {
     position: relative;
     width: 100%;
     height: 220px;
     overflow: hidden;
-    border-radius: 18px;
+    border-radius: 16px;
     background: linear-gradient(90deg, #1a1a1a, #000);
-    box-shadow: 0 0 35px rgba(242,169,0,0.2), inset 0 0 10px rgba(255,255,255,0.05);
+    box-shadow: 0 0 30px rgba(242,169,0,0.2), inset 0 0 10px rgba(255,255,255,0.05);
   }
 
-  /* BTC Info Section */
+  /* BTC Info section */
   .btc-info {
     position: absolute;
     left: 40px;
     top: 30px;
-    z-index: 5;
+    z-index: 10;
     display: flex;
     align-items: center;
     gap: 16px;
   }
 
   .btc-logo {
-    width: 65px;
-    height: 65px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     overflow: hidden;
     background: linear-gradient(135deg, var(--btc-yellow), var(--btc-gold));
     box-shadow: var(--glow);
+    display: grid;
+    place-items: center;
   }
 
   .btc-logo img {
@@ -87,19 +90,19 @@
   /* Floating BTC logos */
   .float-logo {
     position: absolute;
-    width: 55px;
-    height: 55px;
-    opacity: 0.5;
-    object-fit: cover;
+    width: 50px;
+    height: 50px;
+    opacity: 0.6;
     border-radius: 50%;
-    filter: drop-shadow(0 0 10px rgba(242,169,0,0.5));
+    object-fit: cover;
     animation: float 15s infinite ease-in-out;
+    filter: drop-shadow(0 0 15px rgba(242,169,0,0.6));
   }
 
   @keyframes float {
-    0% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
-    50% { transform: translateY(-40px) rotate(25deg); opacity: 0.9; }
-    100% { transform: translateY(0) rotate(-25deg); opacity: 0.5; }
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+    50% { transform: translateY(-40px) rotate(25deg); opacity: 1; }
+    100% { transform: translateY(0) rotate(-25deg); opacity: 0.6; }
   }
 </style>
 </head>
@@ -118,10 +121,10 @@
     </div>
   </div>
 
-  <!-- Floating BTC Logos -->
-  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 70%; left: 20%; animation-delay: 0s;">
-  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 30%; left: 60%; animation-delay: 4s;">
-  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 60%; left: 80%; animation-delay: 7s;">
+  <!-- Floating BTC logos -->
+  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 65%; left: 25%; animation-delay: 0s;">
+  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 35%; left: 75%; animation-delay: 3s;">
+  <img src="https://i.imgur.com/j0f0CaT_d.webp?maxwidth=1520&fidelity=grand" class="float-logo" style="top: 75%; left: 55%; animation-delay: 6s;">
 </div>
 
 <script>
@@ -137,50 +140,50 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-let prices = [];
-let btcPrice = 0;
+let points = new Array(200).fill(height / 2);
+let targetPrice = 0;
 
-// Draw moving yellow gradient chart
+// Draw smooth animated yellow forex line
 function drawChart() {
   ctx.clearRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, 0);
-  gradient.addColorStop(0, "#ffdd55");
+  gradient.addColorStop(0, "#ffcc33");
   gradient.addColorStop(0.5, "#f2a900");
-  gradient.addColorStop(1, "#d49500");
+  gradient.addColorStop(1, "#c18f00");
 
+  // Move points left
+  points.shift();
+  const noise = (Math.random() - 0.5) * 10;
+  const lastPoint = points[points.length - 1];
+  const newY = Math.max(50, Math.min(height - 50, lastPoint + noise));
+  points.push(newY);
+
+  // Draw line
   ctx.beginPath();
-  ctx.moveTo(0, height / 2);
-
-  if (prices.length > 1) {
-    for (let i = 0; i < prices.length; i++) {
-      const x = (i / prices.length) * width;
-      const y = height - ((prices[i] - Math.min(...prices)) / (Math.max(...prices) - Math.min(...prices))) * height;
-      ctx.lineTo(x, y);
-    }
+  ctx.moveTo(0, points[0]);
+  for (let i = 1; i < points.length; i++) {
+    const x = (i / points.length) * width;
+    ctx.lineTo(x, points[i]);
   }
 
   ctx.strokeStyle = gradient;
   ctx.lineWidth = 3;
-  ctx.shadowBlur = 18;
-  ctx.shadowColor = "rgba(242,169,0,0.8)";
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = "rgba(242,169,0,0.7)";
   ctx.stroke();
-
   ctx.shadowBlur = 0;
+
   requestAnimationFrame(drawChart);
 }
 drawChart();
 
-// Live BTC price via Binance WebSocket
+// Live BTC price from Binance
 const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade");
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   const price = parseFloat(data.p);
-  btcPrice = price;
   priceEl.textContent = "$" + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  prices.push(price);
-  if (prices.length > 300) prices.shift();
 };
 </script>
 </body>
